@@ -1,0 +1,107 @@
+{
+  "plan": {
+    "initial": [
+      "denoising",
+      "super-resolution"
+    ],
+    "adjusted": [
+      {
+        "failed": "['denoising', 'super-resolution'] + []",
+        "new": "[] + ['super-resolution', 'denoising']"
+      },
+      {
+        "failed": "['super-resolution'] + ['denoising']",
+        "new": null
+      }
+    ]
+  },
+  "execution_path": {
+    "subtasks": [
+      "denoising",
+      "super-resolution"
+    ],
+    "tools": [
+      "swinir_50",
+      "xrestormer"
+    ]
+  },
+  "n_invocations": 8,
+  "tree": {
+    "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/0-img/input.png",
+    "best_descendant": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/subtask-super-resolution/tool-xrestormer/0-img/output.png",
+    "children": {
+      "denoising": {
+        "best_tool": "swinir_50",
+        "tools": {
+          "restormer": {
+            "degradation": "noise",
+            "severity": "medium",
+            "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-restormer/0-img/output.png",
+            "best_descendant": null,
+            "children": {}
+          },
+          "swinir_50": {
+            "degradation": "noise",
+            "severity": "very low",
+            "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/0-img/output.png",
+            "best_descendant": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/subtask-super-resolution/tool-xrestormer/0-img/output.png",
+            "children": {
+              "super-resolution": {
+                "best_tool": "xrestormer",
+                "tools": {
+                  "xrestormer": {
+                    "degradation": "low resolution",
+                    "severity": "very high",
+                    "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/subtask-super-resolution/tool-xrestormer/0-img/output.png",
+                    "best_descendant": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/subtask-super-resolution/tool-xrestormer/0-img/output.png",
+                    "children": {}
+                  },
+                  "swinir_gan": {
+                    "degradation": "low resolution",
+                    "severity": "very high",
+                    "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/subtask-super-resolution/tool-swinir_gan/0-img/output.png",
+                    "best_descendant": null,
+                    "children": {}
+                  },
+                  "swinir_psnr": {
+                    "degradation": "low resolution",
+                    "severity": "very high",
+                    "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-denoising/tool-swinir_50/subtask-super-resolution/tool-swinir_psnr/0-img/output.png",
+                    "best_descendant": null,
+                    "children": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "super-resolution": {
+        "best_tool": "swinir_gan",
+        "tools": {
+          "xrestormer": {
+            "degradation": "low resolution",
+            "severity": "very high",
+            "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-super-resolution/tool-xrestormer/0-img/output.png",
+            "best_descendant": null,
+            "children": {}
+          },
+          "swinir_psnr": {
+            "degradation": "low resolution",
+            "severity": "very high",
+            "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-super-resolution/tool-swinir_psnr/0-img/output.png",
+            "best_descendant": null,
+            "children": {}
+          },
+          "swinir_gan": {
+            "degradation": "low resolution",
+            "severity": "high",
+            "img_path": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-super-resolution/tool-swinir_gan/0-img/output.png",
+            "best_descendant": "/root/autodl-tmp/AgenticIR/output/example-260308_174850/img_tree/subtask-super-resolution/tool-swinir_gan/0-img/output.png",
+            "children": {}
+          }
+        }
+      }
+    }
+  }
+}

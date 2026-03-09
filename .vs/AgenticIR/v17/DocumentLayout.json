@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\2024Au\\PROJECT\\AgenticIR\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|D:\\2024Au\\PROJECT\\AgenticIR\\pipeline\\infer.py||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pipeline\\infer.py||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "infer.py",
+              "DocumentMoniker": "D:\\2024Au\\PROJECT\\AgenticIR\\pipeline\\infer.py",
+              "RelativeDocumentMoniker": "pipeline\\infer.py",
+              "ToolTip": "D:\\2024Au\\PROJECT\\AgenticIR\\pipeline\\infer.py",
+              "RelativeToolTip": "pipeline\\infer.py",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAkAAAAWAAAA",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAUjSURBVEhLlVVvbBRFFP/t7N5d77jz7LU9amhaS8vfGIxBExKNxKokYIMCKv0ifABEgoSCCEZCQ9LEKjGGCIE2REoUP9hICR\u002BKqUEMikYSEQWKIqRUhLb8u165Y\u002B/P7uz4Zm6vcLWG\u002BEvevnk7M\u002B/N\u002B83btxrug5r\u002B3a2mY8wTVkpnwqnrn9h43p1SaBlqeLg3XfThnof2vey\u002BugshxJgBlsS2VmZsrSvuD0w/fbuYWSILw7ZhcJsblrW\u002Bb\u002Bqmj\u002BW6lnjDYj\u002B01j03S0I9tTsNtXkUCgJsvLJu6fiAtZON8wRPmiU4YpbB0hzonMOwKAAF0bkDL3OOvlraE48Y1sLelA8H4mE8V5Ka8mnZnj9dVyNg8rGpv3F9\u002B40Vt2f6E/ssrgVPXBuHw6kSZMm5JgSY44DogU464jExv/R8XVi3FhZB4GfTj6jOEbbFs8rjKKgMtlxdeyGiZ2vjjgd7V39C3AGORZIVpEmUHmVn5Zr83F1b8ELaVQYezQmlhY60UCYc291s0wa5KW/LsRI6w8jcPTank42C8khEBKXztKMrZ3Jjf/cdDB41carzIprXbiPefWrukUmPYkdLK271JnD2xB9YtuR1dRApCl1DVblBDiqApsGrApDkTy6xefvb\u002BOxgO5YvXoUFz7\u002BCivJKdHd8i2jpeLzUMB9dX3WBrkbtycNb6b/oOT7c6JrQtoqthhiIWXHuwYDtw/crtiteB4\u002BZeHHlHAwOXsPhfd9gV/sOpMwUNq15F1XTKmAmUrnDEPdU7q47wHeRXvh0OEn7tGVbc5hvMF6RP/0Vu6ggg0NtX\u002BPEod8wfHsYre27ER\u002BKI3knCTNJztW9FDpX0OmODQ2sxDvDMLGXpTVeLrlP0SXf4t4cn7RR4p3338Ks\u002BscwY/Y0DMWG0HGgA\u002BHwg2hueg\u002BTa6agaUsTFi1alFvsoiPSjCiPwT4Vh9ZvbmZpboyXp79JFEX1zEhFSJzpOY2enp5ctZAk4kmsXrMKK5evxLmz57BhwwaUlpaqtXnUeU9i6fAhaCl\u002BxFoQ/ZUNc0\u002BtPL0s02cCMTcDgfBUH7774VjOdrOSev/\u002Bz1FcXIzq6mqEQiG0tbW5rnOgG8Dcsl8gDLZd2iwNrSJJGdR4UrghKVIZ5Ep1pMbdrOS7fMX09fUpPRpZKsypwSuC10e6pM0yjl4Vs72KogEuaz3nJCfuB5Z/R4HvB6pa6IxrmcTc6dJmGcHKE46BfipRWaZ5RznJO8/ZwhlVMWNABpAiPOxNabMkZw/E6PTXKQsphfS4FMnxGG1gLCjnaiTq5JNd5f6wsl3k6Uldt5GJc1gmB7ccVe\u002BXLl1yV/03OPVPmSjpGmkzKtGomqEmKDh9gYoWaoAhHbqPURvRRkRWzv0gnbs00b9p7mwGrh1xMh7OM8R/hjr8PRUjx/8XOeeUBWlha8tU7554tuUJ7hi76P4fh8PoMqmrcgNfTO9GQBMIEKtB\u002Bvn4aUw5wUPb5d\u002BWkqKxQIy\u002Bod9pfZDm5boQ6XEkRUJcLvg5VJ/54DVysY2YKxcUaF3ZBdQHb2CCl3oPOaLEqM41ZMh5ivQd\u002Bn4SND5oBUDFglrDQpQ5CNLqIgowgfFYQQCJKcc3hjKRks0QrJFO6cv8XYsIXU/TjO4fXyj\u002Bq9iGNjklmJEPkCTdmQmginFU6pbMUjAher2OZ/XT4Y7ufwXIY\u002BK55kkC3o/My5NmGsHswqtPNfzkTmE4XT8v6\u002BANamdP9jreyE2HiajGB0LA2lmhzi/dZQTgH/DyE3Hn7Qs\u002BAAAAAElFTkSuQmCC",
+              "WhenOpened": "2026-03-08T14:20:25.28Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

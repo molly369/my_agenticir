@@ -1,0 +1,5 @@
+Execution Path:
+  Step 1: denoising -> swinir_50
+  Step 2: brightening -> constant_shift
+
+Final result: /root/autodl-tmp/AgenticIR/output/dark-260304_112356/img_tree/step2-brightening/tool-constant_shift/0-img/output.png

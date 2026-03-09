@@ -22,7 +22,7 @@ class IRAgent:
         input_path (Path): Path to the input image.
         output_dir (Path): Path to the output directory, in which a directory will be created.
         llm_config_path (Path, optional): Path to the config file of LLM. Defaults to Path("config.yml").
-        evaluate_degradation_by (str, optional): The method of degradation evaluation, "depictqa" or "gpt4v". Defaults to "depictqa".
+        evaluate_degradation_by (str, optional): The method of degradation evaluation, "depictqa" or "gpt4v". Defaults to "depictqa".#降级评估方式
         with_retrieval (bool, optional): Whether to schedule with retrieval. Defaults to True.
         schedule_experience_path (Path | None, optional): Path to the experience hub. Defaults to Path( "memory/schedule_experience.json").
         with_reflection (bool, optional): Whether to reflect on the results of tools. Defaults to True.
@@ -45,6 +45,7 @@ class IRAgent:
         reflect_by: str = "depictqa",
         with_rollback: bool = True,
         silent: bool = False,
+        manual_degradations: Optional[list] = None,  # 新增参数
     ) -> None:
         # paths
         self._prepare_dir(input_path, output_dir)
@@ -62,6 +63,11 @@ class IRAgent:
         self._create_components(llm_config_path, schedule_experience_path, silent)
         # constants
         self._set_constants()
+        
+        
+         # store degradation types for record
+        self.initial_evaluation = None
+        self.manual_degradations = manual_degradations  # 保存用户指定的降质类型
 
     def _init_state(self) -> None:
         self.plan: list[Subtask] = []
@@ -176,14 +182,28 @@ class IRAgent:
         self.subtasks = set(self.degra_subtask_dict.values())
         self.levels: list[Level] = ["very low", "low", "medium", "high", "very high"]
 
+    # def run(self, plan: Optional[list[Subtask]]=None, cache: Optional[Path]=None) -> None:
+    #     if plan is not None:
+    #         self.plan = plan.copy()
+    #     else:
+    #         self.propose()
+    #     while self.plan:
+    #         success = self.execute_subtask(cache)
+    #         if plan is None and self.with_rollback and not success:
+    #             self.roll_back()
+    #             self.reschedule()
+    #     self._record_res()
     def run(self, plan: Optional[list[Subtask]]=None, cache: Optional[Path]=None) -> None:
         if plan is not None:
             self.plan = plan.copy()
+            # 记录初始计划，即使是从命令行传入的
+            self.work_mem["plan"]["initial"] = plan.copy()
+            
         else:
-            self.propose()
+            self.propose()  # 自动识别降质类型
         while self.plan:
             success = self.execute_subtask(cache)
-            if plan is None and self.with_rollback and not success:
+            if self.with_rollback and not success:  # 注意这里保持 plan is None 的条件
                 self.roll_back()
                 self.reschedule()
         self._record_res()
@@ -191,6 +211,11 @@ class IRAgent:
     def propose(self) -> None:
         """Sets the initial plan."""
         evaluation = self.evaluate_degradation()
+        
+         # 保存初始降质评估结果
+        self.initial_evaluation = evaluation
+        
+        
         agenda = self.extract_agenda(evaluation)
         plan = self.schedule(agenda)
 
@@ -217,6 +242,13 @@ class IRAgent:
         """Evaluates the severities of the seven degradations
         (motion blur, defocus blur, rain, haze, dark, noise, jpeg compression artifact).
         """
+         # 如果有用户指定的降质类型，直接返回对应的medium级别
+        if self.manual_degradations is not None:
+            evaluation = [(deg, "medium") for deg in self.manual_degradations]
+            self.workflow_logger.info(f"Using manual degradations: {evaluation}")
+            return evaluation
+        
+        
         if self.evaluate_degradation_by == "gpt4v":
             evaluation = self.evaluate_degradation_by_gpt4v()
         else:
@@ -679,6 +711,51 @@ class IRAgent:
             "best_descendant": None,
             "children": {},
         }
+    
+
+    def _write_record_log(self) -> None:
+        """
+        生成record.log文件，和workflow.log放在同一个目录下
+        统一为两行：
+        第一行：降质类型（用户指定的所有类型，或自动评估中low及以上的类型）
+        第二行：修复流水线
+        """
+        record_log_path = self.log_dir / "record.log"
+        
+        # 调试信息
+        print(f"Debug - manual_degradations: {self.manual_degradations}")
+        print(f"Debug - initial_evaluation: {self.initial_evaluation}")
+    
+        # 第一行：降质类型
+        if self.manual_degradations is not None:
+            # 用户指定的降质类型（全部记录，无论程度）
+            degradation_types = self.manual_degradations
+        elif self.initial_evaluation:
+            # 自动评估的降质类型（只取low及以上的）
+            degradation_types = []
+            for degradation, severity in self.initial_evaluation:
+                if self.levels.index(severity) >= 1:  # low及以上
+                    degradation_types.append(degradation)
+        else:
+            degradation_types = []
+    
+        line1 = f'degradation_types:{json.dumps(degradation_types)}'
+    
+        # 第二行：修复流水线
+        subtasks, tools = self._get_execution_path(self.res_path)
+        pipeline_parts = [f"{subtask}@{tool}" for subtask, tool in zip(subtasks, tools)]
+        pipeline_str = "-".join(pipeline_parts) if pipeline_parts else "none"
+        line2 = f"Restoration result: {pipeline_str}"
+    
+        # 写入文件
+        with open(record_log_path, 'w') as f:
+            f.write(line1 + '\n')
+            f.write(line2 + '\n')
+    
+        self.workflow_logger.info(f"Record log saved to {record_log_path}")
+
+
+
 
     def _record_res(self) -> None:
         self.res_path = Path(self.cur_node["img_path"])
@@ -690,6 +767,9 @@ class IRAgent:
         self._dump_summary()
         shutil.copy(self.res_path, self.work_dir / "result.png")
         print(f"Result saved in {self.res_path}.")
+        
+        # 写入record.log文件
+        self._write_record_log()
 
     def _get_execution_path(self, img_path: Path) -> tuple[list[Subtask], list[ToolName]]:
         """Returns the execution path of the restored image (list of subtask and tools)."""

@@ -1,0 +1,13 @@
+Original Image Backup Information
+========================================
+Original Path: /root/autodl-tmp/AgenticIR/dataset/example.png
+Backup Path: /root/autodl-tmp/AgenticIR/output/dark-260304_112356/backup/example_original_20260304_112413.png
+Backup Time: 2026-03-04 11:24:13
+Pipeline Used: dark
+
+Pipeline Steps:
+  Step 1: denoising -> swinir_50
+  Step 2: brightening -> constant_shift
+
+========================================
+Note: This file was moved to backup after processing.

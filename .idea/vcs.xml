@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/brightening/tools/RRDNet" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/defocus_deblurring/tools/DRBNet" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/defocus_deblurring/tools/IFAN" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/defocus_deblurring/tools/Restormer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/dehazing/tools/DehazeFormer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/dehazing/tools/RefineDNet-for-dehazing" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/dehazing/tools/maxim" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/denoising/tools/MPRNet" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/denoising/tools/SwinIR" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/deraining/tools/NeRD-Rain" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/jpeg_compression_artifact_removal/tools/FBCNN" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/super_resolution/tools/DiffBIR" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/executor/super_resolution/tools/HAT" vcs="Git" />
+  </component>
+</project>

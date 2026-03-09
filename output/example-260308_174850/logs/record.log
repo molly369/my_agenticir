@@ -1,0 +1,2 @@
+degradation_types:["noise"]
+Restoration result: denoising@swinir_50-super-resolution@xrestormer
