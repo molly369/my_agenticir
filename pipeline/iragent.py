@@ -45,7 +45,11 @@ class IRAgent:
         reflect_by: str = "depictqa",
         with_rollback: bool = True,
         silent: bool = False,
-        manual_degradations: Optional[list] = None,  # 新增参数
+        manual_degradations: Optional[list] = None,
+        # ========== 新增：交互式迭代相关参数 ==========
+        interactive: bool = False,  # 是否启用交互模式
+        max_iterations: int = 5,  # 最大迭代次数
+        # ===========================================
     ) -> None:
         # paths
         self._prepare_dir(input_path, output_dir)
@@ -64,8 +68,13 @@ class IRAgent:
         # constants
         self._set_constants()
         
+        # ========== 新增：交互式迭代相关属性 ==========
+        self.interactive = interactive
+        self.max_iterations = max_iterations
+        self.iteration_history = []  # 记录每次迭代的结果和反馈
+        # ===========================================
         
-         # store degradation types for record
+        # store degradation types for record
         self.initial_evaluation = None
         self.manual_degradations = manual_degradations  # 保存用户指定的降质类型
 
@@ -182,17 +191,6 @@ class IRAgent:
         self.subtasks = set(self.degra_subtask_dict.values())
         self.levels: list[Level] = ["very low", "low", "medium", "high", "very high"]
 
-    # def run(self, plan: Optional[list[Subtask]]=None, cache: Optional[Path]=None) -> None:
-    #     if plan is not None:
-    #         self.plan = plan.copy()
-    #     else:
-    #         self.propose()
-    #     while self.plan:
-    #         success = self.execute_subtask(cache)
-    #         if plan is None and self.with_rollback and not success:
-    #             self.roll_back()
-    #             self.reschedule()
-    #     self._record_res()
     def run(self, plan: Optional[list[Subtask]]=None, cache: Optional[Path]=None) -> None:
         if plan is not None:
             self.plan = plan.copy()
@@ -208,13 +206,68 @@ class IRAgent:
                 self.reschedule()
         self._record_res()
 
+    # ========== 修改：带交互的主运行方法（三问题模式） ==========
+    def run_with_interaction(self) -> None:
+        """支持用户交互的迭代式修复流程（三问题模式）"""
+        iteration = 0
+        
+        while iteration < self.max_iterations:
+            print(f"\n{'='*60}")
+            print(f"🌟 迭代 {iteration + 1}/{self.max_iterations}")
+            print(f"{'='*60}")
+            
+            # 运行一次修复流程
+            self.run()
+            
+            # 保存当前结果
+            result_path = self.res_path
+            self.iteration_history.append({
+                'iteration': iteration + 1,
+                'result_path': str(result_path),
+                'plan': self.work_mem['plan']['initial'].copy(),
+                'execution_path': self.work_mem['execution_path'].copy()
+            })
+            
+            if not self.interactive or iteration >= self.max_iterations - 1:
+                break
+                
+            print(f"\n📸 当前结果保存在: {result_path}")
+            
+            # 清空输入缓冲区
+            try:
+                import termios
+                termios.tcflush(sys.stdin, termios.TCIFLUSH)
+            except:
+                pass
+            
+            # 获取用户反馈（三问题模式）
+            user_feedback = self._get_user_feedback()
+            
+            if user_feedback['satisfied']:
+                print("\n✨ 用户满意，终止迭代。")
+                break
+            else:
+                print("\n🔄 用户不满意，准备重新规划...")
+                
+                # 准备下一次迭代，传入是否使用原始图像
+                self._prepare_next_iteration(
+                    user_comments=user_feedback['comments'],
+                    use_original=user_feedback['use_original']
+                )
+                iteration += 1
+        
+        self._save_iteration_history()
+        print(f"\n{'='*60}")
+        print("✨ 迭代完成")
+        print(f"{'='*60}")
+    # ===========================================
+
     def propose(self) -> None:
         """Sets the initial plan."""
         evaluation = self.evaluate_degradation()
         
-         # 保存初始降质评估结果
+        # 保存初始降质评估结果
         self.initial_evaluation = evaluation
-        
         
         agenda = self.extract_agenda(evaluation)
         plan = self.schedule(agenda)
@@ -242,12 +295,11 @@ class IRAgent:
         """Evaluates the severities of the seven degradations
         (motion blur, defocus blur, rain, haze, dark, noise, jpeg compression artifact).
         """
-         # 如果有用户指定的降质类型，直接返回对应的medium级别
+        # 如果有用户指定的降质类型，直接返回对应的medium级别
         if self.manual_degradations is not None:
             evaluation = [(deg, "medium") for deg in self.manual_degradations]
             self.workflow_logger.info(f"Using manual degradations: {evaluation}")
             return evaluation
-        
         
         if self.evaluate_degradation_by == "gpt4v":
             evaluation = self.evaluate_degradation_by_gpt4v()
@@ -353,28 +405,28 @@ class IRAgent:
     def execute_subtask(self, cache: Optional[Path]) -> bool:
         """Invokes tools to try to execute the top subtask in `self.plan` on `self.cur_node["img_path"]`, the directory of which is "0-img". Returns success or not. Updates `self.plan` and `self.cur_node`. Generates a directory parallel to "0-img", containing multiple directories, each of which contains outputs of a tool.\n
         Before:
-        ```
-        .
-        ├── 0-img
-        │   └── {input_path}
-        └── ...
-        ```
-        After:
-        ```
-        .
-        ├── 0-img
-        │   └── {input_path}
-        ├── {subtask_dir}
-        |   ├── {tool_dir} 1
-        |   │   └── 0-img
-        |   │       └── output.png
-        |   ├── ...
-        |   └── {tool_dir} n
-        |       └── 0-img
-        |           └── output.png
-        └── ...
-        ```
-        """
+.
+├── 0-img
+│ └── {input_path}
+└── ...
+
+text
+After:
+.
+├── 0-img
+│ └── {input_path}
+├── {subtask_dir}
+| ├── {tool_dir} 1
+| │ └── 0-img
+| │ └── output.png
+| ├── ...
+| └── {tool_dir} n
+| └── 0-img
+| └── output.png
+└── ...
+
+text
+"""
 
         subtask = self.plan.pop(0)
         subtask_dir, degradation, toolbox = self._prepare_for_subtask(subtask)
@@ -571,7 +623,7 @@ class IRAgent:
             )
             assert not self._fully_expanded() or not self.plan, \
                 "Invalid compromise: cannot go on or terminate."
-        
+
         # check
         done_subtasks, _ = self._get_execution_path(Path(self.cur_node['img_path']))
         done_subtasks, plan = set(done_subtasks), set(self.plan)
@@ -620,7 +672,7 @@ class IRAgent:
     def reschedule(self) -> None:
         if not self.plan:
             return
-        
+
         if not self.cur_node["children"]:
             # compromise, pick up the failed plan
             done_subtasks, _ = self._get_execution_path(Path(self.cur_node['img_path']))
@@ -711,7 +763,6 @@ class IRAgent:
             "best_descendant": None,
             "children": {},
         }
-    
 
     def _write_record_log(self) -> None:
         """
@@ -721,11 +772,11 @@ class IRAgent:
         第二行：修复流水线
         """
         record_log_path = self.log_dir / "record.log"
-        
+
         # 调试信息
         print(f"Debug - manual_degradations: {self.manual_degradations}")
         print(f"Debug - initial_evaluation: {self.initial_evaluation}")
-    
+
         # 第一行：降质类型
         if self.manual_degradations is not None:
             # 用户指定的降质类型（全部记录，无论程度）
@@ -738,24 +789,21 @@ class IRAgent:
                     degradation_types.append(degradation)
         else:
             degradation_types = []
-    
+
         line1 = f'degradation_types:{json.dumps(degradation_types)}'
-    
+
         # 第二行：修复流水线
         subtasks, tools = self._get_execution_path(self.res_path)
         pipeline_parts = [f"{subtask}@{tool}" for subtask, tool in zip(subtasks, tools)]
         pipeline_str = "-".join(pipeline_parts) if pipeline_parts else "none"
         line2 = f"Restoration result: {pipeline_str}"
-    
+
         # 写入文件
         with open(record_log_path, 'w') as f:
             f.write(line1 + '\n')
             f.write(line2 + '\n')
-    
+
         self.workflow_logger.info(f"Record log saved to {record_log_path}")
-
-
-
 
     def _record_res(self) -> None:
         self.res_path = Path(self.cur_node["img_path"])
@@ -767,7 +815,7 @@ class IRAgent:
         self._dump_summary()
         shutil.copy(self.res_path, self.work_dir / "result.png")
         print(f"Result saved in {self.res_path}.")
-        
+
         # 写入record.log文件
         self._write_record_log()
 
@@ -781,7 +829,6 @@ class IRAgent:
 
     def _prepare_dir(self, input_path: Path, output_dir: Path) -> None:
         """Sets attributes: `work_dir, img_tree_dir, log_dir, qa_path, workflow_path, summary_path`. Creates necessary directories, which will be like
-        ```
         output_dir
         └── {task_id}(work_dir)
             ├── img_tree
@@ -792,7 +839,8 @@ class IRAgent:
                 ├── workflow.log
                 ├── llm_qa.md
                 └── img_tree.html
-        ```
+
+        text
         """
 
         task_id = f"{input_path.stem}-{strftime('%y%m%d_%H%M%S', localtime())}"
@@ -839,3 +887,243 @@ class IRAgent:
     def _dump_summary(self) -> None:
         with open(self.work_mem_path, "w") as f:
             json.dump(self.work_mem, f, indent=2)
+
+    # ========== 修改：交互式迭代辅助方法（三问题模式） ==========
+    def _get_user_feedback(self) -> dict:
+        """获取用户对当前结果的反馈（三问题模式）"""
+        import sys
+        import time
+
+        print("\n" + "="*50)
+        print("请检查当前修复结果：")
+        print("="*50)
+
+        # 清空输入缓冲区
+        try:
+            import termios
+            termios.tcflush(sys.stdin, termios.TCIFLUSH)
+        except:
+            pass
+
+        time.sleep(0.5)  # 等待一下确保输出完成
+
+        # 问题1：是否满意？
+        while True:
+            try:
+                print("\n📋 问题1/3")
+                print("是否满意当前修复结果？(y/n): ", end='', flush=True)
+                satisfied_input = input().strip().lower()
+                
+                if satisfied_input == '':
+                    print("❌ 输入不能为空，请输入 y 或 n")
+                    continue
+                    
+                if satisfied_input in ['y', 'n', 'yes', 'no']:
+                    satisfied = satisfied_input in ['y', 'yes']
+                    break
+                else:
+                    print(f"❌ 无效输入: '{satisfied_input}'，请输入 y 或 n")
+                    
+            except KeyboardInterrupt:
+                print("\n\n用户中断")
+                raise
+            except Exception as e:
+                print(f"❌ 输入错误: {e}，请重试")
+                continue
+
+        comments = ""
+        use_original = False
+
+        # 如果不满意，继续问问题2和3
+        if not satisfied:
+            # 问题2：改进建议
+            while True:
+                try:
+                    print("\n📋 问题2/3")
+                    print("请描述不满意的地方或改进建议: ", end='', flush=True)
+                    comments = input().strip()
+                    
+                    if comments == '':
+                        print("❌ 建议不能为空，请描述您的不满或建议")
+                        continue
+                        
+                    break
+                    
+                except KeyboardInterrupt:
+                    print("\n\n用户中断")
+                    raise
+                except Exception as e:
+                    print(f"❌ 输入错误: {e}，请重试")
+                    continue
+            
+            # 问题3：是否从原始图像开始
+            while True:
+                try:
+                    print("\n📋 问题3/3")
+                    print("是否从原始图像重新开始？(y/n，默认n): ", end='', flush=True)
+                    use_original_input = input().strip().lower()
+                    
+                    if use_original_input == '':
+                        use_original = False  # 默认不从原始图像开始
+                        break
+                        
+                    if use_original_input in ['y', 'n', 'yes', 'no']:
+                        use_original = use_original_input in ['y', 'yes']
+                        break
+                    else:
+                        print(f"❌ 无效输入: '{use_original_input}'，请输入 y 或 n")
+                        
+                except KeyboardInterrupt:
+                    print("\n\n用户中断")
+                    raise
+                except Exception as e:
+                    print(f"❌ 输入错误: {e}，请重试")
+                    continue
+
+        # 显示反馈总结
+        print("\n" + "="*50)
+        print("📝 反馈总结:")
+        print(f"  满意: {'✅' if satisfied else '❌'}")
+        if not satisfied:
+            print(f"  建议: {comments}")
+            print(f"  从原始图像开始: {'✅' if use_original else '❌'}")
+        print("="*50 + "\n")
+
+        return {
+            'satisfied': satisfied, 
+            'comments': comments,
+            'use_original': use_original
+        }
+
+    def _prepare_next_iteration(self, user_comments: str, use_original: bool = False) -> None:
+        """基于用户反馈准备下一次迭代
+
+        Args:
+            user_comments: 用户反馈
+            use_original: 是否使用原始图像作为输入
+        """
+
+        print(f"\n🔄 准备下一次迭代...")
+        print(f"  反馈: {user_comments}")
+        print(f"  使用原始图像: {'✅' if use_original else '❌'}")
+
+        # 保存当前状态作为经验
+        self._add_to_experience(user_comments)
+
+        # 使用LLM重新规划修复策略
+        new_plan = self._replan_with_feedback(user_comments)
+
+        # 重置状态，根据选择决定输入图像
+        self._reset_for_next_iteration(new_plan, use_original)
+
+    def _reset_for_next_iteration(self, new_plan: list[Subtask], use_original: bool = False) -> None:
+        """重置代理状态以进行下一次迭代
+
+        Args:
+            new_plan: 新的修复计划
+            use_original: 是否使用原始图像作为输入
+        """
+
+        if use_original:
+            # 使用原始图像
+            next_input_path = self.root_input_path
+            print(f"\n📸 使用原始图像作为输入: {next_input_path}")
+        else:
+            # 使用当前结果
+            next_input_path = self.work_dir / f"iteration_{len(self.iteration_history)}_input.png"
+            shutil.copy(self.res_path, next_input_path)
+            print(f"\n📸 使用当前结果作为输入: {next_input_path}")
+
+        # 创建新的工作目录
+        new_task_id = f"{self.root_input_path.stem}-iter{len(self.iteration_history)}-{strftime('%y%m%d_%H%M%S', localtime())}"
+        new_work_dir = self.work_dir.parent / new_task_id
+        print(f"📁 创建工作目录: {new_work_dir}")
+
+        # 重新初始化状态
+        self._prepare_dir(next_input_path, new_work_dir.parent)
+        self._init_state()
+
+        # 设置新的计划
+        self.plan = new_plan.copy()
+        self.work_mem["plan"]["initial"] = new_plan.copy()
+        self.work_mem["plan"]["previous_iterations"] = self.iteration_history.copy()
+
+        print(f"✅ 下一次迭代准备完成")
+        print(f"📋 新计划: {new_plan}")
+
+    def _replan_with_feedback(self, feedback: str) -> list[Subtask]:
+        """让LLM基于用户反馈重新规划修复策略"""
+
+        # 获取历史执行信息
+        history_summary = self._format_iteration_history()
+
+        # 构建提示词
+        replan_prompt = f"""
+        Previous restoration attempts:
+        {history_summary}
+
+        User feedback on the latest result:
+        "{feedback}"
+
+        Based on this feedback, please propose a new restoration plan. 
+        Consider:
+        1. What degradations might have been missed or insufficiently addressed?
+        2. Should we try different tools for certain subtasks?
+        3. Is the order of subtasks optimal?
+
+        The available subtasks are: {list(self.subtasks)}
+
+        Please provide a new plan as a list of subtasks in execution order.
+        Your output must be a JSON object with two fields:
+        - "thought": your analysis of the feedback and reasoning for the new plan
+        - "plan": a list of subtasks in the order you recommend
+        """
+
+        def check_replan(response: object):
+            assert isinstance(response, dict), "Response should be a dict"
+            assert "thought" in response, "Response must contain 'thought'"
+            assert "plan" in response, "Response must contain 'plan'"
+            assert isinstance(response["plan"], list), "Plan must be a list"
+            for subtask in response["plan"]:
+                assert subtask in self.subtasks, f"Invalid subtask: {subtask}"
+
+        # 调用GPT重新规划
+        response = eval(self.gpt4(
+            prompt=replan_prompt,
+            format_check=check_replan
+        ))
+
+        self.workflow_logger.info(f"Replanning insights: {response['thought']}")
+        self.workflow_logger.info(f"New plan: {response['plan']}")
+
+        return response["plan"]
+
+    def _format_iteration_history(self) -> str:
+        """格式化迭代历史用于LLM提示"""
+        if not self.iteration_history:
+            return "No previous attempts."
+
+        history_str = ""
+        for i, record in enumerate(self.iteration_history):
+            history_str += f"\nIteration {i+1}:\n"
+            history_str += f"  Plan: {record['plan']}\n"
+            history_str += f"  Execution path: {record['execution_path']}\n"
+
+        return history_str
+
+    def _add_to_experience(self, feedback: str) -> None:
+        """将用户反馈添加到经验库（可选）"""
+        # 这里可以实现将成功/失败的案例添加到经验库的逻辑
+        # 用于未来改进调度策略
+        pass
+
+    def _save_iteration_history(self) -> None:
+        """保存所有迭代历史到文件"""
+        history_path = self.log_dir / "iteration_history.json"
+        with open(history_path, 'w') as f:
+            json.dump({
+                'iterations': self.iteration_history,
+                'final_result': str(self.res_path) if hasattr(self, 'res_path') else None
+            }, f, indent=2)
+        self.workflow_logger.info(f"Iteration history saved to {history_path}")
+    # ===========================================
