@@ -62,3 +62,27 @@ gpt_evaluate_tool_result_prompt = """What's the severity of {degradation} in thi
 gpt_compare_prompt = """Which of the two images do you consider to be of better quality? Please provide your reasoning. Your output must be a JSON object with two fields: "thought" and "choice", where "choice" is either "former" or "latter", indicating which image you think is of higher quality. An exception is that if you think the difference is negligible, you can choose "neither" as "choice"."""
 
 depictqa_compare_prompt = "Which of the two images, Image A or Image B, do you consider to be of better quality? Answer the question using a single word or phrase."
+
+
+
+
+# 添加到文件末尾
+replan_with_feedback_prompt = """You are an expert image restoration advisor. A previous restoration attempt has been made, but the user is not satisfied with the result.
+
+Previous restoration plan: {previous_plan}
+Execution path: {execution_path}
+
+User feedback: "{feedback}"
+
+Based on this feedback, please analyze what went wrong and propose a new restoration plan. Consider:
+1. Were the correct degradations identified?
+2. Was the order of restoration steps optimal?
+3. Could different tools produce better results?
+4. Are there any degradations that were missed or over-treated?
+
+Please provide your analysis and a new restoration plan. The available subtasks are: {available_subtasks}
+
+Your output must be a JSON object with:
+- "analysis": your detailed analysis of the feedback
+- "new_plan": a list of subtasks in the recommended order
+"""
